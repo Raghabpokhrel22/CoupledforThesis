@@ -11,8 +11,8 @@ using ModelingToolkit
 const cₚ = 1004.0
 
 # New parameters for dynamic subsidence
-@parameters τ_rad = 15.0
-@parameters Γ_rad = 8.0e-3
+@parameters τ_rad = 1.5e7   # in seconds (~174 days), tuned to give D ~ 4e-6
+@parameters Γ_rad = 8.0e-3  # radiative equilibrium lapse rate K/m
 
 # New variable: dynamic D
 @variables D_dyn(t) = 4e-6
@@ -30,13 +30,15 @@ eqs = [
     CTMLM.s₀ ~ CTMLM.s₊ - 12.5,
     CTMLM.ρ₀ ~ 1,
     CTMLM.q₀ ~ CTMLM.q_saturation(288.96 + 1.25),
-    # Dynamic subsidence process
-    D_dyn ~ (CTMLM.s₊ - (CTMLM.s_b - Γ_rad * CTMLM.z_b)) / (τ_rad * CTMLM.z_b),
+    # Dynamic subsidence — Newtonian cooling in SI units
+    # T_FT = s₊ (K), T_eq = s_b - Γ_rad*z_b (K)
+    # D = (T_FT - T_eq) / (τ_rad * z_b) in s⁻¹
+    D_dyn ~ (CTMLM.s₊ - CTMLM.s_b + Γ_rad * CTMLM.z_b) / (τ_rad * CTMLM.z_b),
 ]
 
 ds = processes_to_coupledodes(eqs, CTMLM)
 
-set_parameter!(ds, :D,   0.0)  # zero out fixed D
+set_parameter!(ds, :D,   4e-6)  # keep fixed D active too for now
 set_parameter!(ds, :d_c, 0.0009)
 set_parameter!(ds, :U,   6.8)
 set_parameter!(ds, :e_e, 1.0)
@@ -46,5 +48,5 @@ step!(ds, 100.0)
 println("=== COUPLED MODEL RESULTS ===")
 println("z_b   = ", round(observe_state(ds, CTMLM.z_b),  digits=1), " m")
 println("C     = ", round(observe_state(ds, CTMLM.C),    digits=3))
-println("D_dyn = ", observe_state(ds, D_dyn), " s⁻¹")
+println("D_dyn = ", round(observe_state(ds, D_dyn), sigdigits=3), " s⁻¹  (target: ~4e-6)")
 println("q_b   = ", round(observe_state(ds, CTMLM.q_b),  digits=2), " g/kg")
