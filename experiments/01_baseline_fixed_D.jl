@@ -1,46 +1,46 @@
 # =============================================================
 # 01_baseline_fixed_D.jl
-# Reproduce baseline using the exact tutorial approach from
-# Datseris (2025) - known working configuration
-# Target: z_b ≈ 705m, C ≈ 0.85, Δ₊s ≈ 8.8 K
+# Exact reproduction from Datseris (2025) tutorial
+# Stevens 2006 boundary layer model with clouds
 # =============================================================
 
 using DynamicalSystems, ConceptualClimateModels
 import ConceptualClimateModels.CloudToppedMixedLayerModel as CTMLM
 
+const cₚ = 1004.0
+
 eqs = [
+    CTMLM.mlm_dynamic(),
+    CTMLM.entrainment_velocity(:Stevens2006; use_augmentation = false),
+    # Cloud processes
     CTMLM.cf_dynamic(),
     CTMLM.decoupling_variable(),
-    CTMLM.mlm_dynamic(),
-    CTMLM.mlm_q₊(:relative),
-    CTMLM.mlm_s₊(:difference),
-    CTMLM.entrainment_velocity(:Stevens2006),
-    CTMLM.mlm_radiative_cooling(:three_layer),
-    CTMLM.cloud_longwave_cooling(),
-    CTMLM.cloud_shortwave_warming(),
-    CTMLM.cloud_emissivity(),
-    CTMLM.cloud_albedo(),
     CTMLM.cloud_base_height(:Bolton1980),
-    CTMLM.downwards_longwave_radiation(:three_layer),
-    CTMLM.free_troposphere_emission_temperature(),
+    # Simple radiation (from tutorial)
+    CTMLM.CTRC ~ 10 + 40*CTMLM.C,
+    CTMLM.ΔF_s ~ CTMLM.CTRC,
+    # Boundary conditions (fixed, from Stevens 2006)
+    CTMLM.s₊ ~ 301200.0/cₚ,
+    CTMLM.q₊ ~ 1.56,
+    CTMLM.s₀ ~ CTMLM.s₊ - 12.5,
+    CTMLM.ρ₀ ~ 1,
+    CTMLM.q₀ ~ CTMLM.q_saturation(288.96 + 1.25),
 ]
 
 ds = processes_to_coupledodes(eqs, CTMLM)
 
-# Set baseline parameters (fixed D)
-set_parameter!(ds, :D,   5e-6)
-set_parameter!(ds, :d_c, 0.0012)
-set_parameter!(ds, :U,   6.0)
-set_parameter!(ds, :τ_C, 2.0)
-set_parameter!(ds, :RH₊, 0.2)
+# Exact parameters from tutorial
+set_parameter!(ds, :D,   4e-6)
+set_parameter!(ds, :d_c, 0.0009)
+set_parameter!(ds, :U,   6.8)
+set_parameter!(ds, :e_e, 1.0)
 
-# Run to steady state - 500 days
-step!(ds, 500.0)
+# Run to steady state
+step!(ds, 100.0)
 
 # Print results
-println("=== BASELINE RESULTS (Fixed D) ===")
-println("z_b  = ", round(observe_state(ds, CTMLM.z_b),  digits=1), " m    (target: ~705)")
-println("C    = ", round(observe_state(ds, CTMLM.C),    digits=3), "      (target: ~0.85)")
-println("Δ₊s  = ", round(observe_state(ds, CTMLM.Δ₊s), digits=2), " K    (target: ~8.8)")
-println("SST  = ", round(observe_state(ds, CTMLM.SST),  digits=2), " K")
-println("LHF  = ", round(observe_state(ds, CTMLM.LHF),  digits=2), " W/m²")
+println("=== BASELINE RESULTS ===")
+println("z_b = ", round(observe_state(ds, CTMLM.z_b), digits=1), " m")
+println("C   = ", round(observe_state(ds, CTMLM.C),   digits=3))
+println("q_b = ", round(observe_state(ds, CTMLM.q_b), digits=2), " g/kg")
+println("s_b = ", round(observe_state(ds, CTMLM.s_b), digits=2), " K")
