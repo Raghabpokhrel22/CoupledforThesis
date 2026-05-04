@@ -72,3 +72,24 @@ if max_diff > 0.05
 else
     println("No hysteresis found")
 end
+
+using CairoMakie
+
+fig = Figure(size = (700, 450))
+ax  = Axis(fig[1,1],
+    xlabel = "Large-scale divergence D (s⁻¹)",
+    ylabel = "Cloud fraction C",
+    title  = "Hysteresis in Stratocumulus-Cumulus Transition"
+)
+
+lines!(ax, collect(D_forward),  C_forward,  color = :blue,
+    linewidth = 2, label = "Forward (Sc → Cu)")
+lines!(ax, collect(D_backward), C_backward, color = :red,
+    linewidth = 2, label = "Backward (Cu → Sc)")
+
+scatter!(ax, collect(D_forward),  C_forward,  color = :blue, markersize = 8)
+scatter!(ax, collect(D_backward), C_backward, color = :red,  markersize = 8)
+
+axislegend(ax, position = :lt)
+save("figures/hysteresis.png", fig)
+println("Figure saved to figures/hysteresis.png")
