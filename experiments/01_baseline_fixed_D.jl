@@ -13,6 +13,7 @@ eqs = [
     CTMLM.decoupling_variable(),
     CTMLM.entrainment_velocity(:Stevens2006),
     CTMLM.mlm_radiative_cooling(:three_layer),
+    CTMLM.cloud_emissivity(),
     CTMLM.mlm_s₊(:difference),
     CTMLM.mlm_q₊(:relative),
     CTMLM.free_troposphere_emission_temperature(),
