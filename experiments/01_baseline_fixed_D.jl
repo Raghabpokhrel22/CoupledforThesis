@@ -17,6 +17,9 @@ eqs = [
     CTMLM.mlm_s₊(:difference),
     CTMLM.mlm_q₊(:relative),
     CTMLM.free_troposphere_emission_temperature(),
+    CTMLM.cloud_longwave_cooling(),
+    CTMLM.cloud_shortwave_warming(),
+
 ]
 
 ds = processes_to_coupledodes(eqs, CTMLM)
